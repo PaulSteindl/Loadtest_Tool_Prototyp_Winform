@@ -336,6 +336,7 @@
             this.stopBtn.TabIndex = 29;
             this.stopBtn.Text = "Stop";
             this.stopBtn.UseVisualStyleBackColor = true;
+            this.stopBtn.Click += new System.EventHandler(this.stopBtn_Click);
             // 
             // Form1
             // 
