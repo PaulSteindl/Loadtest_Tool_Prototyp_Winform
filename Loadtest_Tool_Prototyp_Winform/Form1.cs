@@ -1,15 +1,24 @@
-﻿using System;
+﻿using Microsoft.CSharp;
+using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Schema;
+using System.Xml.Serialization;
+using XmlSchemaClassGenerator;
+using System.ComponentModel.Design;
+using System.CodeDom;
+using System.Reflection.Emit;
 
 namespace Loadtest_Tool_Prototyp_Winform
 {
@@ -17,6 +26,7 @@ namespace Loadtest_Tool_Prototyp_Winform
     {
         private string _xsdFile;
         private CancellationTokenSource _cts = new CancellationTokenSource();
+        private Type _rootType;
 
         public Form1()
         {
@@ -37,15 +47,75 @@ namespace Loadtest_Tool_Prototyp_Winform
             }
         }
 
-        private void propertyGrid1_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void loadXsdBtn_Click(object sender, EventArgs e)
         {
-            PropertyGridSimpleDemoClass test = new PropertyGridSimpleDemoClass();
-            xmlPropertView.SelectedObject = test;
+            var generator = new Generator
+            {
+                OutputFolder = ".\\",
+                Log = s => Console.Out.WriteLine(s),
+                GenerateNullables = true,
+                NamespaceProvider = new Dictionary<NamespaceKey, string>
+                {
+                    { new NamespaceKey(), "tmpXmlClass" }
+                }
+                .ToNamespaceProvider(new GeneratorConfiguration { NamespacePrefix = "PS" }.NamespaceProvider.GenerateNamespace)
+            };
+
+            generator.Generate(new[] { _xsdFile });
+
+            // Lese den generierten Code aus den erstellten Dateien
+            StringWriter generatedCode = new StringWriter();
+            string file = Directory.GetFiles(".\\", "tmpXmlClass.cs", SearchOption.AllDirectories).First();
+            using (StreamReader reader = new StreamReader(file))
+            {
+                generatedCode.WriteLine(reader.ReadToEnd());
+            }
+
+            using (CSharpCodeProvider codeProvider = new CSharpCodeProvider())
+            {
+                CompilerParameters compilerParameters = new CompilerParameters
+                {
+                    GenerateExecutable = false,
+                    GenerateInMemory = true,
+                    IncludeDebugInformation = false,
+                    ReferencedAssemblies = { "System.Xml.dll", "System.Runtime.Serialization.dll", "System.dll", "System.ComponentModel.DataAnnotations.dll" }
+                };
+
+                var compileResults = codeProvider.CompileAssemblyFromSource(compilerParameters, generatedCode.ToString());
+
+                if (compileResults.Errors.HasErrors)
+                {
+                    Console.WriteLine("Fehler beim Kompilieren des generierten Codes:");
+                    foreach (CompilerError error in compileResults.Errors)
+                    {
+                        Console.WriteLine($"{error.FileName}({error.Line},{error.Column}): {error.ErrorText}");
+                    }
+                }
+                else
+                {
+                    XmlSchema schema;
+                    using (var stream = new StreamReader(_xsdFile))
+                    {
+                        schema = XmlSchema.Read(stream, null);
+                    }
+
+                    // Finde das Root-Element
+                    string rootElement = String.Empty;
+                    foreach (XmlSchemaObject item in schema.Items)
+                    {
+                        if (item is XmlSchemaElement element)
+                        {
+                            rootElement = char.ToUpper(element.Name[0]) + element.Name.Substring(1);
+                            break;
+                        }
+                    }
+
+                    // Hole die generierte Hauptklasse aus dem kompilierten Assembly
+                    //_rootType = compileResults.CompiledAssembly.GetType(String.Format("tmpXmlClass.{0}", rootElement));
+                    _rootType = compileResults.CompiledAssembly.GetType("tmpXmlClass.ShiporderShipto");
+                    xmlPropertView.SelectedObject = Activator.CreateInstance(_rootType);
+                }
+            }
         }
 
         private async void sendRequestsBtn_Click(object sender, EventArgs e)
@@ -125,36 +195,5 @@ namespace Loadtest_Tool_Prototyp_Winform
             _cts.Cancel();
             //Todo cleanup
         }
-    }
-
-    class PropertyGridSimpleDemoClass
-    {
-        int m_DisplayInt;
-        public int DisplayInt
-        {
-            get { return m_DisplayInt; }
-            set { m_DisplayInt = value; }
-        }
-
-        string m_DisplayString;
-        public string DisplayString
-        {
-            get { return m_DisplayString; }
-            set { m_DisplayString = value; }
-        }
-
-        bool m_DisplayBool;
-        public bool DisplayBool
-        {
-            get { return m_DisplayBool; }
-            set { m_DisplayBool = value; }
-        }
-
-        Color m_DisplayColors;
-        public Color DisplayColors
-        {
-            get { return m_DisplayColors; }
-            set { m_DisplayColors = value; }
-        }
-    }
+    }    
 }
