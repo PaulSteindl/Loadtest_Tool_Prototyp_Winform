@@ -55,8 +55,6 @@
             this.label11 = new System.Windows.Forms.Label();
             this.sendRequestsBtn = new System.Windows.Forms.Button();
             this.stopBtn = new System.Windows.Forms.Button();
-            this.label12 = new System.Windows.Forms.Label();
-            this.rootElementTxt = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.threadsNumberNr)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.rampupPeriodeNr)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.loopCountNr)).BeginInit();
@@ -75,7 +73,7 @@
             // 
             // selectXsdBtn
             // 
-            this.selectXsdBtn.Location = new System.Drawing.Point(16, 115);
+            this.selectXsdBtn.Location = new System.Drawing.Point(12, 88);
             this.selectXsdBtn.Name = "selectXsdBtn";
             this.selectXsdBtn.Size = new System.Drawing.Size(75, 23);
             this.selectXsdBtn.TabIndex = 1;
@@ -85,7 +83,7 @@
             // 
             // loadXsdBtn
             // 
-            this.loadXsdBtn.Location = new System.Drawing.Point(97, 115);
+            this.loadXsdBtn.Location = new System.Drawing.Point(93, 88);
             this.loadXsdBtn.Name = "loadXsdBtn";
             this.loadXsdBtn.Size = new System.Drawing.Size(75, 23);
             this.loadXsdBtn.TabIndex = 2;
@@ -303,7 +301,7 @@
             // 
             // createXmlsBtn
             // 
-            this.createXmlsBtn.Location = new System.Drawing.Point(178, 115);
+            this.createXmlsBtn.Location = new System.Drawing.Point(174, 88);
             this.createXmlsBtn.Name = "createXmlsBtn";
             this.createXmlsBtn.Size = new System.Drawing.Size(84, 23);
             this.createXmlsBtn.TabIndex = 26;
@@ -339,29 +337,11 @@
             this.stopBtn.UseVisualStyleBackColor = true;
             this.stopBtn.Click += new System.EventHandler(this.stopBtn_Click);
             // 
-            // label12
-            // 
-            this.label12.AutoSize = true;
-            this.label12.Location = new System.Drawing.Point(13, 92);
-            this.label12.Name = "label12";
-            this.label12.Size = new System.Drawing.Size(74, 13);
-            this.label12.TabIndex = 30;
-            this.label12.Text = "Root Element:";
-            // 
-            // rootElementTxt
-            // 
-            this.rootElementTxt.Location = new System.Drawing.Point(93, 88);
-            this.rootElementTxt.Name = "rootElementTxt";
-            this.rootElementTxt.Size = new System.Drawing.Size(177, 20);
-            this.rootElementTxt.TabIndex = 31;
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.rootElementTxt);
-            this.Controls.Add(this.label12);
             this.Controls.Add(this.stopBtn);
             this.Controls.Add(this.sendRequestsBtn);
             this.Controls.Add(this.label11);
@@ -430,8 +410,6 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Button sendRequestsBtn;
         private System.Windows.Forms.Button stopBtn;
-        private System.Windows.Forms.Label label12;
-        private System.Windows.Forms.TextBox rootElementTxt;
     }
 }
 

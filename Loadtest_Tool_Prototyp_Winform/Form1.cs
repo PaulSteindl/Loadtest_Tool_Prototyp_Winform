@@ -19,19 +19,62 @@ using XmlSchemaClassGenerator;
 using System.ComponentModel.Design;
 using System.CodeDom;
 using System.Reflection.Emit;
+using System.Reflection;
+using System.Xml;
+using Bogus;
+using Bogus.Bson;
+using System.Collections;
 
 namespace Loadtest_Tool_Prototyp_Winform
 {
     public partial class Form1 : Form
     {
-        private string _xsdFile;
+        private string _xsdFilePath;
         private CancellationTokenSource _cts = new CancellationTokenSource();
-        private Type _rootType;
 
         public Form1()
         {
             InitializeComponent();
         }
+
+        #region Helper
+        public static void FillWithDummyData<T>(T obj)
+        {
+            var faker = new Faker();
+            Dictionary<Type, Action<PropertyInfo>> FillPropertyDic = new Dictionary<Type, Action<PropertyInfo>>
+            {
+                { typeof(string), (PropertyInfo property) => property.SetValue(obj, faker.Random.String2(10)) },
+                { typeof(int), (PropertyInfo property) => property.SetValue(obj, faker.Random.Int()) },
+                { typeof(DateTime), (PropertyInfo property) => property.SetValue(obj, DateTime.Now) }
+            };
+
+            var properties = obj.GetType().GetProperties();
+
+            foreach (PropertyInfo property in properties)
+            {
+                if (!property.CanWrite) continue;
+
+                if (FillPropertyDic.ContainsKey(property.PropertyType))
+                {
+                    FillPropertyDic[property.PropertyType](property);
+                    continue;
+                }
+
+                if (typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
+                {
+                    continue;
+                }
+
+                if (!property.PropertyType.IsValueType && property.PropertyType != typeof(string))
+                {
+                    object subclass = Activator.CreateInstance(property.PropertyType);
+                    FillWithDummyData(subclass); // Rekursiver Aufruf, um die Subklasse zu befüllen
+                    TypeDescriptor.AddProvider(new ExpandableTypeDescriptionProvider(), property.PropertyType);
+                    property.SetValue(obj, subclass);
+                }
+            }
+        }
+        #endregion
 
         private void selectXsdBtn_Click(object sender, EventArgs e)
         {
@@ -42,80 +85,61 @@ namespace Loadtest_Tool_Prototyp_Winform
 
             if (dlg.ShowDialog() == DialogResult.OK)
             {
-                _xsdFile = dlg.FileName;
+                _xsdFilePath = dlg.FileName;
                 selectXsdTxt.Text = dlg.SafeFileName;
             }
         }
 
         private void loadXsdBtn_Click(object sender, EventArgs e)
         {
-            var generator = new Generator
+            //Liest das File aus
+            XmlSchema schema;
+            XmlSchemas schemas = new XmlSchemas();
+
+            using (XmlReader reader = XmlReader.Create(_xsdFilePath))
             {
-                OutputFolder = ".\\",
-                Log = s => Console.Out.WriteLine(s),
-                GenerateNullables = true,
-                NamespaceProvider = new Dictionary<NamespaceKey, string>
-                {
-                    { new NamespaceKey(), "tmpXmlClass" }
-                }
-                .ToNamespaceProvider(new GeneratorConfiguration { NamespacePrefix = "PS" }.NamespaceProvider.GenerateNamespace)
+                schema = XmlSchema.Read(reader, null);
+            }
+            schemas.Add(schema);
+
+            CodeNamespace codeNamespace = new CodeNamespace("GeneratedNamespace");
+            CodeCompileUnit codeCompileUnit = new CodeCompileUnit();
+            codeCompileUnit.Namespaces.Add(codeNamespace);
+
+            XmlSchemaImporter schemaImporter = new XmlSchemaImporter(schemas);
+            XmlCodeExporter codeExporter = new XmlCodeExporter(codeNamespace);
+
+            XmlSchemaElement schemaElement = schema.Elements.Values.Cast<XmlSchemaElement>().First();
+            XmlTypeMapping typeMapping = schemaImporter.ImportTypeMapping(schemaElement.QualifiedName);
+            codeExporter.ExportTypeMapping(typeMapping);
+
+            // Kompiliert die temporäre C#-Klasse zur Laufzeit
+            var compilerParameters = new CompilerParameters
+            {
+                GenerateExecutable = false,
+                GenerateInMemory = true,
+                ReferencedAssemblies = { "System.dll", "System.Xml.dll" }
             };
 
-            generator.Generate(new[] { _xsdFile });
+            var codeProvider = new CSharpCodeProvider();
+            CompilerResults compilerResults = codeProvider.CompileAssemblyFromDom(compilerParameters, codeCompileUnit);
 
-            // Lese den generierten Code aus den erstellten Dateien
-            StringWriter generatedCode = new StringWriter();
-            string file = Directory.GetFiles(".\\", "tmpXmlClass.cs", SearchOption.AllDirectories).First();
-            using (StreamReader reader = new StreamReader(file))
+            if (compilerResults.Errors.HasErrors)
             {
-                generatedCode.WriteLine(reader.ReadToEnd());
-            }
-
-            using (CSharpCodeProvider codeProvider = new CSharpCodeProvider())
-            {
-                CompilerParameters compilerParameters = new CompilerParameters
+                Console.WriteLine("Fehler beim Kompilieren des generierten Codes:");
+                foreach (CompilerError error in compilerResults.Errors)
                 {
-                    GenerateExecutable = false,
-                    GenerateInMemory = true,
-                    IncludeDebugInformation = false,
-                    ReferencedAssemblies = { "System.Xml.dll", "System.Runtime.Serialization.dll", "System.dll", "System.ComponentModel.DataAnnotations.dll" }
-                };
-
-                var compileResults = codeProvider.CompileAssemblyFromSource(compilerParameters, generatedCode.ToString());
-
-                if (compileResults.Errors.HasErrors)
-                {
-                    Console.WriteLine("Fehler beim Kompilieren des generierten Codes:");
-                    foreach (CompilerError error in compileResults.Errors)
-                    {
-                        Console.WriteLine($"{error.FileName}({error.Line},{error.Column}): {error.ErrorText}");
-                    }
-                }
-                else
-                {
-                    XmlSchema schema;
-                    using (var stream = new StreamReader(_xsdFile))
-                    {
-                        schema = XmlSchema.Read(stream, null);
-                    }
-
-                    // Finde das Root-Element
-                    string rootElement = String.Empty;
-                    foreach (XmlSchemaObject item in schema.Items)
-                    {
-                        if (item is XmlSchemaElement element)
-                        {
-                            rootElement = char.ToUpper(element.Name[0]) + element.Name.Substring(1);
-                            break;
-                        }
-                    }
-
-                    // Hole die generierte Hauptklasse aus dem kompilierten Assembly
-                    //_rootType = compileResults.CompiledAssembly.GetType(String.Format("tmpXmlClass.{0}", rootElement));
-                    _rootType = compileResults.CompiledAssembly.GetType("tmpXmlClass.ShiporderShipto");
-                    xmlPropertView.SelectedObject = Activator.CreateInstance(_rootType);
+                    Console.WriteLine($"{error.FileName}({error.Line},{error.Column}): {error.ErrorText}");
                 }
             }
+
+            Assembly generatedAssembly = compilerResults.CompiledAssembly;
+            Type _rootType = generatedAssembly.GetTypes()[0];
+
+            // Erstellt eine Instanz der generierten Klasse und befüllt sie
+            object createdObject = Activator.CreateInstance(_rootType);
+            FillWithDummyData(createdObject);
+            xmlPropertView.SelectedObject = createdObject;
         }
 
         private async void sendRequestsBtn_Click(object sender, EventArgs e)
