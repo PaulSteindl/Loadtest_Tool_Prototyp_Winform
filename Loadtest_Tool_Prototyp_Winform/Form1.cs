@@ -24,28 +24,46 @@ using System.Xml;
 using Bogus;
 using Bogus.Bson;
 using System.Collections;
+using AutoBogus;
+using System.Net.Http.Headers;
+using System.Net;
 
 namespace Loadtest_Tool_Prototyp_Winform
 {
-    public partial class Form1 : Form
+    public partial class LoadTestTool : Form
     {
         private string _xsdFilePath;
+        private string _xmlCreatePath;
         private CancellationTokenSource _cts = new CancellationTokenSource();
+        private object _createdObject;
+        private static List<string> _loadedXmls = new List<string>();
+        private static List<CollectedData> _collectedDatas = new List<CollectedData>();
 
-        public Form1()
+        public LoadTestTool()
         {
             InitializeComponent();
         }
 
         #region Helper
-        public static void FillWithDummyData<T>(T obj)
+        private static void FillWithDummyData<T>(T obj)
         {
             var faker = new Faker();
             Dictionary<Type, Action<PropertyInfo>> FillPropertyDic = new Dictionary<Type, Action<PropertyInfo>>
             {
                 { typeof(string), (PropertyInfo property) => property.SetValue(obj, faker.Random.String2(10)) },
+                { typeof(char), (PropertyInfo property) => property.SetValue(obj, faker.Random.Char()) },
+                { typeof(bool), (PropertyInfo property) => property.SetValue(obj, faker.Random.Bool()) },
+
                 { typeof(int), (PropertyInfo property) => property.SetValue(obj, faker.Random.Int()) },
-                { typeof(DateTime), (PropertyInfo property) => property.SetValue(obj, DateTime.Now) }
+                { typeof(decimal), (PropertyInfo property) => property.SetValue(obj, faker.Random.Decimal()) },
+                { typeof(float), (PropertyInfo property) => property.SetValue(obj, faker.Random.Float()) },
+                { typeof(long), (PropertyInfo property) => property.SetValue(obj, faker.Random.Long()) },
+                { typeof(short), (PropertyInfo property) => property.SetValue(obj, faker.Random.Short()) },
+                { typeof(byte), (PropertyInfo property) => property.SetValue(obj, faker.Random.Byte()) },
+
+                { typeof(Guid), (PropertyInfo property) => property.SetValue(obj, faker.Random.Guid()) },
+                { typeof(DateTime), (PropertyInfo property) => property.SetValue(obj, DateTime.Now) },
+                { typeof(Uri), (PropertyInfo property) => property.SetValue(obj, new Uri("https://github.com/PaulSteindl")) }
             };
 
             var properties = obj.GetType().GetProperties();
@@ -62,6 +80,18 @@ namespace Loadtest_Tool_Prototyp_Winform
 
                 if (typeof(IEnumerable).IsAssignableFrom(property.PropertyType))
                 {
+                    object subclassItem1 = Activator.CreateInstance(property.PropertyType.GetElementType());
+                    object subclassItem2 = Activator.CreateInstance(property.PropertyType.GetElementType());
+
+                    FillWithDummyData(subclassItem1); // Rekursiver Aufruf, um die Subklasse zu befüllen
+                    FillWithDummyData(subclassItem2); // Rekursiver Aufruf, um die Subklasse zu befüllen
+
+                    var subclassList = Array.CreateInstance(property.PropertyType.GetElementType(), 2);
+                    subclassList.SetValue(subclassItem1, 0);
+                    subclassList.SetValue(subclassItem2, 1);
+
+                    property.SetValue(obj, subclassList);
+
                     continue;
                 }
 
@@ -73,6 +103,72 @@ namespace Loadtest_Tool_Prototyp_Winform
                     property.SetValue(obj, subclass);
                 }
             }
+        }
+
+        private void CreateXmlListForRequests(int totalRequestAmount)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(_createdObject.GetType());
+            _loadedXmls.Clear();
+
+            for (int i = 0; i < totalRequestAmount; i++)
+            {
+                FillWithDummyData(_createdObject);
+
+                using (StringWriter stringWriter = new StringWriter())
+                {
+                    using (XmlWriter xmlWriter = XmlWriter.Create(stringWriter, new XmlWriterSettings { Indent = true, OmitXmlDeclaration = true }))
+                    {
+                        xmlSerializer.Serialize(xmlWriter, _createdObject);
+                        _loadedXmls.Add($@"<?xml version=""1.0"" encoding=""utf-8""?>
+                            <soap12:Envelope xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:soap12=""http://www.w3.org/2003/05/soap-envelope"">
+                                <soap12:Body>
+                                    {stringWriter.ToString()}
+                                </soap12:Body>
+                            </soap12:Envelope>");
+                    }
+                }
+            }
+        }
+
+        private void GenerateReport(double requestNr)
+        {
+            Results frm = new Results();
+
+            frm.requestsTxt.Text = requestNr.ToString();
+
+            long total = 0;
+            long min = _collectedDatas.First().Time;
+            long max = 0;
+            int errorCount = 0;
+            foreach (CollectedData data in _collectedDatas) 
+            {
+                total += data.Time;
+
+                if (min > data.Time) min = data.Time;
+                if (max < data.Time) max = data.Time;
+                if (!data.Success) { errorCount++; }
+
+                frm.resultListView.Items.Add(new ListViewItem(new string[] 
+                { 
+                    data.Time.ToString(),
+                    data.Success.ToString(),
+                    data.SendKb.ToString(),
+                    data.ReceiveKb.ToString(),
+                    data.Send.ToString(),
+                    data.Response.ToString()
+                }));
+
+                Console.WriteLine(data.Response);
+            };
+
+            frm.averageTimeTxt.Text = (total / requestNr).ToString();
+            frm.minTimeTxt.Text = (min).ToString();
+            frm.maxTimeTxt.Text = (max).ToString();
+            frm.errorMarginTxt.Text = ((errorCount / requestNr) * 100).ToString() + "%";
+
+            frm.Show();
+            _collectedDatas.Clear();
+
         }
         #endregion
 
@@ -87,6 +183,7 @@ namespace Loadtest_Tool_Prototyp_Winform
             {
                 _xsdFilePath = dlg.FileName;
                 selectXsdTxt.Text = dlg.SafeFileName;
+                this.loadXsdBtn.Enabled = true;
             }
         }
 
@@ -137,26 +234,35 @@ namespace Loadtest_Tool_Prototyp_Winform
             Type _rootType = generatedAssembly.GetTypes()[0];
 
             // Erstellt eine Instanz der generierten Klasse und befüllt sie
-            object createdObject = Activator.CreateInstance(_rootType);
-            FillWithDummyData(createdObject);
-            xmlPropertView.SelectedObject = createdObject;
+            _createdObject = Activator.CreateInstance(_rootType);
+            FillWithDummyData(_createdObject);
+            xmlPropertView.SelectedObject = _createdObject;
+            this.sendRequestsBtn.Enabled = true;
+            this.selectXmlsPathBtn.Enabled = true;
         }
 
         private async void sendRequestsBtn_Click(object sender, EventArgs e)
         {
+            this.stopBtn.Enabled = true;
+
             HttpClient httpClient = new HttpClient();
             List<Task> tasks = new List<Task>();
             Stopwatch stopwatch = new Stopwatch();
 
             CancellationToken token = _cts.Token;
-            _cts.CancelAfter(new TimeSpan(0, 0, Convert.ToInt32(this.durationNr.Value)));
             string url = String.Format("{0}:{1}/{2}", this.urlTxt.Text, this.portTxt.Text, this.pathTxt.Text);
+            string soapAction = this.soapActionTxt.Text;
             int completedRequests = 0;
             double currentRequest = 0;
             int totalRequests = Convert.ToInt32(this.threadsNumberNr.Value * this.loopCountNr.Value);
             int rampupPeriode = Convert.ToInt32(this.rampupPeriodeNr.Value);
 
+            CreateXmlListForRequests(totalRequests);
+
             Console.WriteLine("Starting load test...");
+
+            if(this.durationActiveChbx.Checked)
+                _cts.CancelAfter(new TimeSpan(0, 0, Convert.ToInt32(this.durationNr.Value)));
 
             stopwatch.Start();
 
@@ -172,9 +278,8 @@ namespace Loadtest_Tool_Prototyp_Winform
                     tasks.Add(Task.Run(async () =>
                     {
                         await Task.Delay(rampUpDelay);
-                        await ExecuteRequest(httpClient, url);
+                        await ExecuteRequest(httpClient, url, soapAction, (int)currentRequest);
                         int currentCompleted = Interlocked.Increment(ref completedRequests);
-                        Console.WriteLine($"{currentCompleted} requests completed.");
                     }));
 
                     if (tasks.Count >= this.threadsNumberNr.Value)
@@ -194,23 +299,64 @@ namespace Loadtest_Tool_Prototyp_Winform
             stopwatch.Stop();
 
             Console.WriteLine($"Load test completed. {currentRequest} requests in {stopwatch.ElapsedMilliseconds} ms.");
+
+            GenerateReport(currentRequest);
         }
 
-        private static async Task ExecuteRequest(HttpClient httpClient, string url)
+        private static async Task ExecuteRequest(HttpClient httpClient, string url, string soapAction, int currentRequest)
         {
+            string soapRequestXml = _loadedXmls.ElementAt(currentRequest);
+
+            CollectedData collectedData = new CollectedData();
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "POST";
+            request.ContentType = "text/xml; charset=utf-8";
+            request.Headers.Add("SOAPAction", soapAction);
+            collectedData.Send = soapRequestXml;
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            using (Stream stream = await request.GetRequestStreamAsync())
+            {
+                using (StreamWriter streamWriter = new StreamWriter(stream, Encoding.UTF8))
+                {
+                    await streamWriter.WriteAsync(soapRequestXml);
+                    collectedData.SendKb = Encoding.UTF8.GetByteCount(soapRequestXml);
+                }
+            }
+
             try
             {
-                // Replace this code with the actual code to send the SOAP request.
-                // This is just a simple GET request for demonstration purposes.
-                //var response = await httpClient.GetAsync(url);
-                //response.EnsureSuccessStatusCode();
-
-                await Task.Delay(1000);
-                Console.WriteLine($"Request: {url}, {Task.CurrentId}");
+                using (WebResponse response = await request.GetResponseAsync())
+                {
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        string responseContent = await reader.ReadToEndAsync();
+                        collectedData.Response = responseContent;
+                        collectedData.ReceiveKb = response.ContentLength;
+                        collectedData.Success = true;
+                    }
+                }
             }
-            catch (Exception ex)
+            catch (WebException ex)
             {
-                Console.WriteLine($"Request failed: {ex.Message}");
+                using (WebResponse response = ex.Response)
+                {
+                    using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        string responseContent = await reader.ReadToEndAsync();
+                        collectedData.Response = responseContent;
+                        collectedData.ReceiveKb = response.ContentLength;
+                        collectedData.Success = false;
+                    }
+                }
+            }
+            finally
+            {
+                stopwatch.Stop();
+                collectedData.Time = stopwatch.ElapsedMilliseconds;
+                _collectedDatas.Add(collectedData);
             }
         }
 
@@ -218,6 +364,33 @@ namespace Loadtest_Tool_Prototyp_Winform
         {
             _cts.Cancel();
             //Todo cleanup
+        }
+
+        private void selectXmlsPathBtn_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dlg = new FolderBrowserDialog();
+
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                this.createPathTxt.Text = dlg.SelectedPath;
+                this._xmlCreatePath = this.createPathTxt.Text;
+                this.createXmlsBtn.Enabled = true;
+            }
+        }
+
+        private void createXmlsBtn_Click(object sender, EventArgs e)
+        {
+            XmlSerializer xmlSerializer = new XmlSerializer(_createdObject.GetType());
+
+            for (int i = 0; i < this.xmlCreateCountNr.Value; i++)
+            {
+                FillWithDummyData(_createdObject);
+
+                using (StreamWriter streamWriter = new StreamWriter(String.Format("{0}\\CreatedXml_{1}.xml", _xmlCreatePath, Guid.NewGuid())))
+                {
+                    xmlSerializer.Serialize(streamWriter, _createdObject);
+                }
+            }
         }
     }    
 }

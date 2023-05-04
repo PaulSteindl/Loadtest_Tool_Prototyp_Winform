@@ -16,7 +16,7 @@ namespace Loadtest_Tool_Prototyp_Winform
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+            Application.Run(new LoadTestTool());
         }
     }
 }

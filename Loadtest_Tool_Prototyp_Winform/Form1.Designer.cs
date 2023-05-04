@@ -1,6 +1,6 @@
 ﻿namespace Loadtest_Tool_Prototyp_Winform
 {
-    partial class Form1
+    partial class LoadTestTool
     {
         /// <summary>
         /// Erforderliche Designervariable.
@@ -36,7 +36,7 @@
             this.urlTxt = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.portTxt = new System.Windows.Forms.TextBox();
-            this.pathTxt = new System.Windows.Forms.TextBox();
+            this.soapActionTxt = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.xmlPropertView = new System.Windows.Forms.PropertyGrid();
@@ -51,10 +51,14 @@
             this.label10 = new System.Windows.Forms.Label();
             this.createPathTxt = new System.Windows.Forms.TextBox();
             this.xmlCreateCountNr = new System.Windows.Forms.NumericUpDown();
-            this.createXmlsBtn = new System.Windows.Forms.Button();
+            this.selectXmlsPathBtn = new System.Windows.Forms.Button();
             this.label11 = new System.Windows.Forms.Label();
             this.sendRequestsBtn = new System.Windows.Forms.Button();
             this.stopBtn = new System.Windows.Forms.Button();
+            this.createXmlsBtn = new System.Windows.Forms.Button();
+            this.durationActiveChbx = new System.Windows.Forms.CheckBox();
+            this.label12 = new System.Windows.Forms.Label();
+            this.pathTxt = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.threadsNumberNr)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.rampupPeriodeNr)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.loopCountNr)).BeginInit();
@@ -83,6 +87,7 @@
             // 
             // loadXsdBtn
             // 
+            this.loadXsdBtn.Enabled = false;
             this.loadXsdBtn.Location = new System.Drawing.Point(93, 88);
             this.loadXsdBtn.Name = "loadXsdBtn";
             this.loadXsdBtn.Size = new System.Drawing.Size(75, 23);
@@ -96,13 +101,13 @@
             this.selectXsdTxt.Location = new System.Drawing.Point(93, 10);
             this.selectXsdTxt.Name = "selectXsdTxt";
             this.selectXsdTxt.ReadOnly = true;
-            this.selectXsdTxt.Size = new System.Drawing.Size(177, 20);
+            this.selectXsdTxt.Size = new System.Drawing.Size(263, 20);
             this.selectXsdTxt.TabIndex = 3;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(13, 281);
+            this.label2.Location = new System.Drawing.Point(15, 283);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(38, 13);
             this.label2.TabIndex = 4;
@@ -110,15 +115,16 @@
             // 
             // urlTxt
             // 
-            this.urlTxt.Location = new System.Drawing.Point(57, 278);
+            this.urlTxt.Location = new System.Drawing.Point(59, 280);
             this.urlTxt.Name = "urlTxt";
             this.urlTxt.Size = new System.Drawing.Size(196, 20);
             this.urlTxt.TabIndex = 5;
+            this.urlTxt.Text = "https://";
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(13, 308);
+            this.label3.Location = new System.Drawing.Point(15, 310);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(29, 13);
             this.label3.TabIndex = 6;
@@ -126,26 +132,26 @@
             // 
             // portTxt
             // 
-            this.portTxt.Location = new System.Drawing.Point(57, 305);
+            this.portTxt.Location = new System.Drawing.Point(59, 307);
             this.portTxt.Name = "portTxt";
             this.portTxt.Size = new System.Drawing.Size(78, 20);
             this.portTxt.TabIndex = 7;
             // 
-            // pathTxt
+            // soapActionTxt
             // 
-            this.pathTxt.Location = new System.Drawing.Point(57, 332);
-            this.pathTxt.Name = "pathTxt";
-            this.pathTxt.Size = new System.Drawing.Size(196, 20);
-            this.pathTxt.TabIndex = 8;
+            this.soapActionTxt.Location = new System.Drawing.Point(59, 359);
+            this.soapActionTxt.Name = "soapActionTxt";
+            this.soapActionTxt.Size = new System.Drawing.Size(196, 20);
+            this.soapActionTxt.TabIndex = 8;
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(13, 335);
+            this.label4.Location = new System.Drawing.Point(15, 362);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(32, 13);
+            this.label4.Size = new System.Drawing.Size(40, 13);
             this.label4.TabIndex = 9;
-            this.label4.Text = "Path:";
+            this.label4.Text = "Action:";
             // 
             // label5
             // 
@@ -158,6 +164,7 @@
             // 
             // xmlPropertView
             // 
+            this.xmlPropertView.AllowDrop = true;
             this.xmlPropertView.Location = new System.Drawing.Point(377, 29);
             this.xmlPropertView.Name = "xmlPropertView";
             this.xmlPropertView.Size = new System.Drawing.Size(411, 409);
@@ -166,7 +173,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(13, 152);
+            this.label6.Location = new System.Drawing.Point(15, 157);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(49, 13);
             this.label6.TabIndex = 13;
@@ -174,7 +181,7 @@
             // 
             // threadsNumberNr
             // 
-            this.threadsNumberNr.Location = new System.Drawing.Point(120, 150);
+            this.threadsNumberNr.Location = new System.Drawing.Point(122, 155);
             this.threadsNumberNr.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -198,7 +205,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(13, 178);
+            this.label7.Location = new System.Drawing.Point(15, 183);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(89, 13);
             this.label7.TabIndex = 16;
@@ -206,14 +213,14 @@
             // 
             // rampupPeriodeNr
             // 
-            this.rampupPeriodeNr.Location = new System.Drawing.Point(120, 176);
+            this.rampupPeriodeNr.Location = new System.Drawing.Point(122, 181);
             this.rampupPeriodeNr.Name = "rampupPeriodeNr";
             this.rampupPeriodeNr.Size = new System.Drawing.Size(120, 20);
             this.rampupPeriodeNr.TabIndex = 17;
             // 
             // loopCountNr
             // 
-            this.loopCountNr.Location = new System.Drawing.Point(120, 202);
+            this.loopCountNr.Location = new System.Drawing.Point(122, 207);
             this.loopCountNr.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -237,7 +244,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(13, 204);
+            this.label8.Location = new System.Drawing.Point(15, 209);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(65, 13);
             this.label8.TabIndex = 19;
@@ -246,7 +253,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(13, 233);
+            this.label9.Location = new System.Drawing.Point(15, 238);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(101, 13);
             this.label9.TabIndex = 21;
@@ -254,7 +261,7 @@
             // 
             // durationNr
             // 
-            this.durationNr.Location = new System.Drawing.Point(120, 231);
+            this.durationNr.Location = new System.Drawing.Point(122, 236);
             this.durationNr.Maximum = new decimal(new int[] {
             10800,
             0,
@@ -289,24 +296,36 @@
             this.createPathTxt.Location = new System.Drawing.Point(93, 36);
             this.createPathTxt.Name = "createPathTxt";
             this.createPathTxt.ReadOnly = true;
-            this.createPathTxt.Size = new System.Drawing.Size(177, 20);
+            this.createPathTxt.Size = new System.Drawing.Size(263, 20);
             this.createPathTxt.TabIndex = 24;
             // 
             // xmlCreateCountNr
             // 
             this.xmlCreateCountNr.Location = new System.Drawing.Point(93, 62);
+            this.xmlCreateCountNr.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.xmlCreateCountNr.Name = "xmlCreateCountNr";
-            this.xmlCreateCountNr.Size = new System.Drawing.Size(177, 20);
+            this.xmlCreateCountNr.Size = new System.Drawing.Size(263, 20);
             this.xmlCreateCountNr.TabIndex = 25;
+            this.xmlCreateCountNr.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             // 
-            // createXmlsBtn
+            // selectXmlsPathBtn
             // 
-            this.createXmlsBtn.Location = new System.Drawing.Point(174, 88);
-            this.createXmlsBtn.Name = "createXmlsBtn";
-            this.createXmlsBtn.Size = new System.Drawing.Size(84, 23);
-            this.createXmlsBtn.TabIndex = 26;
-            this.createXmlsBtn.Text = "Create XMLs";
-            this.createXmlsBtn.UseVisualStyleBackColor = true;
+            this.selectXmlsPathBtn.Enabled = false;
+            this.selectXmlsPathBtn.Location = new System.Drawing.Point(174, 88);
+            this.selectXmlsPathBtn.Name = "selectXmlsPathBtn";
+            this.selectXmlsPathBtn.Size = new System.Drawing.Size(96, 23);
+            this.selectXmlsPathBtn.TabIndex = 26;
+            this.selectXmlsPathBtn.Text = "Select XML Path";
+            this.selectXmlsPathBtn.UseVisualStyleBackColor = true;
+            this.selectXmlsPathBtn.Click += new System.EventHandler(this.selectXmlsPathBtn_Click);
             // 
             // label11
             // 
@@ -319,7 +338,8 @@
             // 
             // sendRequestsBtn
             // 
-            this.sendRequestsBtn.Location = new System.Drawing.Point(16, 368);
+            this.sendRequestsBtn.Enabled = false;
+            this.sendRequestsBtn.Location = new System.Drawing.Point(18, 390);
             this.sendRequestsBtn.Name = "sendRequestsBtn";
             this.sendRequestsBtn.Size = new System.Drawing.Size(98, 23);
             this.sendRequestsBtn.TabIndex = 28;
@@ -329,7 +349,8 @@
             // 
             // stopBtn
             // 
-            this.stopBtn.Location = new System.Drawing.Point(120, 368);
+            this.stopBtn.Enabled = false;
+            this.stopBtn.Location = new System.Drawing.Point(122, 390);
             this.stopBtn.Name = "stopBtn";
             this.stopBtn.Size = new System.Drawing.Size(75, 23);
             this.stopBtn.TabIndex = 29;
@@ -337,15 +358,56 @@
             this.stopBtn.UseVisualStyleBackColor = true;
             this.stopBtn.Click += new System.EventHandler(this.stopBtn_Click);
             // 
-            // Form1
+            // createXmlsBtn
+            // 
+            this.createXmlsBtn.Enabled = false;
+            this.createXmlsBtn.Location = new System.Drawing.Point(276, 88);
+            this.createXmlsBtn.Name = "createXmlsBtn";
+            this.createXmlsBtn.Size = new System.Drawing.Size(80, 23);
+            this.createXmlsBtn.TabIndex = 30;
+            this.createXmlsBtn.Text = "Create XMLs";
+            this.createXmlsBtn.UseVisualStyleBackColor = true;
+            this.createXmlsBtn.Click += new System.EventHandler(this.createXmlsBtn_Click);
+            // 
+            // durationActiveChbx
+            // 
+            this.durationActiveChbx.AutoSize = true;
+            this.durationActiveChbx.Location = new System.Drawing.Point(248, 239);
+            this.durationActiveChbx.Name = "durationActiveChbx";
+            this.durationActiveChbx.Size = new System.Drawing.Size(56, 17);
+            this.durationActiveChbx.TabIndex = 31;
+            this.durationActiveChbx.Text = "Active";
+            this.durationActiveChbx.UseVisualStyleBackColor = true;
+            // 
+            // label12
+            // 
+            this.label12.AutoSize = true;
+            this.label12.Location = new System.Drawing.Point(15, 336);
+            this.label12.Name = "label12";
+            this.label12.Size = new System.Drawing.Size(32, 13);
+            this.label12.TabIndex = 32;
+            this.label12.Text = "Path:";
+            // 
+            // pathTxt
+            // 
+            this.pathTxt.Location = new System.Drawing.Point(59, 333);
+            this.pathTxt.Name = "pathTxt";
+            this.pathTxt.Size = new System.Drawing.Size(196, 20);
+            this.pathTxt.TabIndex = 33;
+            // 
+            // LoadTestTool
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.pathTxt);
+            this.Controls.Add(this.label12);
+            this.Controls.Add(this.durationActiveChbx);
+            this.Controls.Add(this.createXmlsBtn);
             this.Controls.Add(this.stopBtn);
             this.Controls.Add(this.sendRequestsBtn);
             this.Controls.Add(this.label11);
-            this.Controls.Add(this.createXmlsBtn);
+            this.Controls.Add(this.selectXmlsPathBtn);
             this.Controls.Add(this.xmlCreateCountNr);
             this.Controls.Add(this.createPathTxt);
             this.Controls.Add(this.label10);
@@ -360,7 +422,7 @@
             this.Controls.Add(this.xmlPropertView);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
-            this.Controls.Add(this.pathTxt);
+            this.Controls.Add(this.soapActionTxt);
             this.Controls.Add(this.portTxt);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.urlTxt);
@@ -369,8 +431,8 @@
             this.Controls.Add(this.loadXsdBtn);
             this.Controls.Add(this.selectXsdBtn);
             this.Controls.Add(this.label1);
-            this.Name = "Form1";
-            this.Text = "Form1";
+            this.Name = "LoadTestTool";
+            this.Text = "LoadTestTool";
             ((System.ComponentModel.ISupportInitialize)(this.threadsNumberNr)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.rampupPeriodeNr)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.loopCountNr)).EndInit();
@@ -391,7 +453,7 @@
         private System.Windows.Forms.TextBox urlTxt;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox portTxt;
-        private System.Windows.Forms.TextBox pathTxt;
+        private System.Windows.Forms.TextBox soapActionTxt;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.PropertyGrid xmlPropertView;
@@ -406,10 +468,14 @@
         private System.Windows.Forms.Label label10;
         private System.Windows.Forms.TextBox createPathTxt;
         private System.Windows.Forms.NumericUpDown xmlCreateCountNr;
-        private System.Windows.Forms.Button createXmlsBtn;
+        private System.Windows.Forms.Button selectXmlsPathBtn;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.Button sendRequestsBtn;
         private System.Windows.Forms.Button stopBtn;
+        private System.Windows.Forms.Button createXmlsBtn;
+        private System.Windows.Forms.CheckBox durationActiveChbx;
+        private System.Windows.Forms.Label label12;
+        private System.Windows.Forms.TextBox pathTxt;
     }
 }
 
